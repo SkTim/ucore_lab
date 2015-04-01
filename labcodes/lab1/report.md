@@ -169,19 +169,6 @@ si
  x /2i $pc  //显示当前eip处的汇编指令
 ```
 
-> [进一步的补充]
-
-```
-改写Makefile文件
-	debug: $(UCOREIMG)
-		$(V)$(TERMINAL) -e "$(QEMU) -S -s -d in_asm -D $(BINDIR)/q.log -parallel stdio -hda $< -serial null"
-		$(V)sleep 2
-		$(V)$(TERMINAL) -e "gdb -q -tui -x tools/gdbinit"
-```
-
-在调用qemu时增加`-d in_asm -D q.log`参数，便可以将运行的汇编指令保存在q.log中。
-为防止qemu在gdb连接后立即开始执行，删除了`tools/gdbinit`中的`continue`行。
-
 [练习2.2] 在初始化位置0x7c00 设置实地址断点,测试断点正常。
 
 在tools/gdbinit结尾加上
@@ -370,7 +357,6 @@ si
 ## [练习4]
 分析bootloader加载ELF格式的OS的过程。
 
-首先看readsect函数，
 `readsect`从设备的第secno扇区读取数据到dst位置
 ```
 	static void
