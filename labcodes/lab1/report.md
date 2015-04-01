@@ -149,7 +149,7 @@ dd if=bin/kernel of=bin/ucore.img seek=1 conv=notrunc
  
 1 修改 lab1/tools/gdbinit,内容为:
 ```
-set architecture i8086
+set architecture i8086x
 target remote :1234
 ```
 
@@ -454,14 +454,28 @@ readseg简单包装了readsect，可以从设备读取任意长度的内容。
 ## [练习5] 
 实现函数调用堆栈跟踪函数 
 
-ss:ebp指向的堆栈位置储存着caller的ebp，以此为线索可以得到所有使用堆栈的函数ebp。
-ss:ebp+4指向caller调用时的eip，ss:ebp+8等是（可能的）参数。
+Kernel executable memory footprint: 64KB
+ebp:0x00007b28 eip:0x001009b6 args:0x00010094 0x00010094 0x00007b58 0x00100097 
+kern/debug/kdebug.c:305: print_stackframe+21
+ebp:0x00007b38 eip:0x00100ca5 args:0x00000000 0x00000000 0x00000000 0x00007ba8 
+kern/debug/kmonitor.c:125: mon_backtrace+10
+ebp:0x00007b58 eip:0x00100097 args:0x00000000 0x00007b80 0xffff0000 0x00007b84 
+kern/init/init.c:48: grade_backtrace2+33
+ebp:0x00007b78 eip:0x001000c0 args:0x00000000 0xffff0000 0x00007ba4 0x00000029 
+kern/init/init.c:53: grade_backtrace1+38
+ebp:0x00007b98 eip:0x001000de args:0x00000000 0x00100000 0xffff0000 0x0000001d 
+kern/init/init.c:58: grade_backtrace0+23
+ebp:0x00007bb8 eip:0x00100103 args:0x0010359c 0x00103580 0x0000136a 0x00000000 
+kern/init/init.c:63: grade_backtrace+34
+ebp:0x00007be8 eip:0x00100055 args:0x00000000 0x00000000 0x00000000 0x00007c4f 
+kern/init/init.c:28: kern_init+84
+ebp:0x00007bf8 eip:0x00007d64 args:0xc031fcfa 0xc08ed88e 0x64e4d08e 0xfa7502a8 
+<unknow>: -- 0x00007d63 --
 
 输出中，堆栈最深一层为
 ```
-	ebp:0x00007bf8 eip:0x00007d68 \
-		args:0x00000000 0x00000000 0x00000000 0x00007c4f
-	    <unknow>: -- 0x00007d67 --
+ebp:0x00007bf8 eip:0x00007d64 args:0xc031fcfa 0xc08ed88e 0x64e4d08e 0xfa7502a8 
+<unknow>: -- 0x00007d63 --
 ```
 
 其对应的是第一个使用堆栈的函数，bootmain.c中的bootmain。
