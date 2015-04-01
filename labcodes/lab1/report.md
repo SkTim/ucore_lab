@@ -554,3 +554,4 @@ call指令压栈，所以bootmain中ebp为0x7bf8。
 	tf->tf_eflags |= 0x3000;
 ```
 
+
