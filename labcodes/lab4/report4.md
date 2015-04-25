@@ -72,12 +72,16 @@ get_pid()函数可以保证每次分配不同的PID。get\_pid将pid 每次加�
 
 ### 思考题
 
-> 分析proc_run()并回答以下问题：  
+分析proc_run()并回答以下问题：  
 
 > 创建运行了几个内核线程？
 
+```
 两个，分别是idle和init。
+```
 
 > local_intr_save和local_intr_restore在这里有何作用？
 
+```
 local\_intr\_save用于关闭interrupt requestlocal\_intr\_restore用于恢复interrupt request。
+```
