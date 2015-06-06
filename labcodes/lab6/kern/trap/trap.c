@@ -54,14 +54,27 @@ idt_init(void) {
       *     You don't know the meaning of this instruction? just google it! and check the libs/x86.h to know more.
       *     Notice: the argument of lidt is idt_pd. try to find it!
       */
-    extern uintptr_t __vectors[];
-    int i;
-    for(i=0; i<sizeof(idt)/sizeof(struct gatedesc); i++){
+     /* LAB5 2012011319 */ 
+     //you should update your lab1 code (just add ONE or TWO lines of code), let user app to use syscall to get the service of ucore
+     //so you should setup the syscall interrupt gate in here
+
+        extern uintptr_t __vectors[];
+
+      // set up idt
+      int i = 0;
+      for(i = 0; i < sizeof(idt) / sizeof(struct gatedesc); i ++) {
+        // gate, istrap, sel, off, dpl
         SETGATE(idt[i], 0, GD_KTEXT, __vectors[i], DPL_KERNEL);
-    }
-    SETGATE(idt[T_SWITCH_TOK], 0, GD_KTEXT, __vectors[T_SWITCH_TOK], DPL_USER);
-    SETGATE(idt[T_SYSCALL], 0, GD_KTEXT, __vectors[T_SYSCALL], DPL_USER);
-    lidt(&idt_pd);
+      }
+      // cprintf("size of idt: %u \n", sizeof(idt) / sizeof(struct gatedesc));
+
+      // int from user to kernel
+      SETGATE(idt[T_SWITCH_TOK], 0, GD_KTEXT, __vectors[T_SWITCH_TOK], DPL_USER);
+      // set up syscall interrupt gate
+      SETGATE(idt[T_SYSCALL], 1, GD_KTEXT, __vectors[T_SYSCALL], DPL_USER);
+
+      // let cpu know the location of idt
+      lidt(& idt_pd);
 }
 
 static const char *
@@ -192,15 +205,11 @@ static void
 trap_dispatch(struct trapframe *tf) {
     char c;
 
-    int ret=0;
+    // temp trapframe
     struct trapframe frame_k2u;
     struct trapframe frame_u2k;
-    {
-        
-    };
-    {
-        
-    };
+    int ret=0;
+
     switch (tf->tf_trapno) {
     case T_PGFLT:  //page fault
         if ((ret = pgfault_handler(tf)) != 0) {
@@ -232,10 +241,22 @@ trap_dispatch(struct trapframe *tf) {
          * (2) Every TICK_NUM cycle, you can print some info using a funciton, such as print_ticks().
          * (3) Too Simple? Yes, I think so!
          */
+        /* LAB5 2012011319 */
+        /* you should upate you lab1 code (just add ONE or TWO lines of code):
+         *    Every TICK_NUM cycle, you should set current process's current->need_resched = 1
+         */
+        /* LAB6 YOUR CODE */
+        /* you should upate you lab5 code
+         * IMPORTANT FUNCTIONS:
+	     * sched_class_proc_tick
+         */
         ticks ++;
         /*
-        if (ticks % TICK_NUM == 0) {
-            print_ticks();
+        // every 100 ticks print debug info
+        if(ticks % TICK_NUM == 0) {
+            assert(current != NULL);
+            current -> need_resched = 1;
+            // print_ticks();
         }
         */
         assert(current != NULL);
@@ -249,10 +270,11 @@ trap_dispatch(struct trapframe *tf) {
         c = cons_getc();
         cprintf("kbd [%03d] %c\n", c, c);
         break;
-    //LAB1 CHALLENGE 1 : YOUR CODE you should modify below codes.
+    //LAB1 CHALLENGE 1 : 2012011319 you should modify below codes.
     case T_SWITCH_TOU:
-        if(tf->tf_cs != USER_CS){
-            frame_k2u = *tf;
+        if(tf -> tf_cs != USER_CS) {
+            frame_k2u = * tf;
+
             frame_k2u.tf_cs = USER_CS;
             frame_k2u.tf_ds = USER_DS;
             frame_k2u.tf_es = USER_DS;
@@ -260,20 +282,22 @@ trap_dispatch(struct trapframe *tf) {
             frame_k2u.tf_esp = (uint32_t)tf + sizeof(struct trapframe) - 8;
             frame_k2u.tf_eflags |= FL_IOPL_MASK;
 
-            *((uint32_t*)tf - 1) = (uint32_t)& frame_k2u;
+            * ((uint32_t *)tf - 1) = (uint32_t) & frame_k2u;
         }
+        break;
     case T_SWITCH_TOK:
-        /*panic("T_SWITCH_** ??\n");*/
-        if(tf->tf_cs != KERNEL_CS){
-            frame_u2k = *tf;
+        // panic("T_SWITCH_** ??\n");
+        if(tf -> tf_cs != KERNEL_CS) {
+            frame_u2k = * tf;
+
             frame_u2k.tf_cs = KERNEL_CS;
             frame_u2k.tf_ds = KERNEL_DS;
             frame_u2k.tf_es = KERNEL_DS;
             frame_u2k.tf_ss = KERNEL_DS;
-            frame_u2k.tf_esp = (uint32_t)tf - sizeof(struct  trapframe) + 8;
+            frame_u2k.tf_esp = (uint32_t)tf - sizeof(struct trapframe) + 8;
             frame_u2k.tf_eflags &= ~FL_IOPL_MASK;
 
-            *((uint32_t*)tf - 1) = (uint32_t)& frame_u2k;
+            * ((uint32_t *)tf - 1) = (uint32_t) & frame_u2k;
         }
         break;
     case IRQ_OFFSET + IRQ_IDE1:

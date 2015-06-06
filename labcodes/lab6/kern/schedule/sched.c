@@ -30,6 +30,7 @@ sched_class_pick_next(void) {
     return sched_class->pick_next(rq);
 }
 
+// not static anymore
 void
 sched_class_proc_tick(struct proc_struct *proc) {
     if (proc != idleproc) {

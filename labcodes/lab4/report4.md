@@ -29,7 +29,7 @@ struct context {
 };
 ```
 
-trapframe 储存的是中断发生前栈帧的信息：
+trapframe 储存的是中断发生前栈帧的一些信息：
 
 ```
 struct trapframe {
@@ -60,28 +60,26 @@ struct trapframe {
 
 ### 实验步骤
 
-填写do\_fork()函数。首先使用alloc\_proc()分配以及初始化一个新进程，并将其parent设为当前进程。然后为进程分配栈，然后复制原有进程的执行状态。然后将PCB加入hash表和proc\_list，最后将新进程设置为runable 。
+填写 do\_fork() 函数。首先使用 alloc\_proc() 分配并初始化一个新进程，并将其 parrent 设为当前进程。然后为进程分配栈，然后复制原有进程的执行状态。然后将 PCB 加入 hash 表和 proc\_list ，最后将新进程设置为 runable 。
+
+实验中需要注意使用 local\_intr\_save 和 local\_intr\_restore 打开和关闭中断，具体方法可以参考代码中的 proc_run() 函数。
 
 ### 思考题
 
-> 是否能做到给每个新fork的线程一个唯一的id？说明理由。
+> 是否能做到给每个新 fork 的线程一个唯一的 id ？说明理由。
 
-get_pid()函数可以保证每次分配不同的PID。get\_pid将pid 每次加一直到找到可用的PID返回。如果进程数等于MAX\_PROCESS，从而没有PID可以分配，会不断进入repeat直到其中某个进程退出。从而fork出来的每个进程的PID都是唯一的。
+get_pid() 函数可以保证每次分配不同的 PID 。get\_pid 将 pid 每次加一直到找到可用的 PID 返回。如果进程数等于 MAX\_PROCESS 从而没有 PID 可以分配，会不断进入 repeat 直到其中某个进程退出。从而 fork 出来的每个进程的 PID 都是唯一的。
 
 ## Exercise 3
 
 ### 思考题
 
-分析proc_run()并回答以下问题：  
+> 分析 proc_run() 并回答以下问题：  
 
 > 创建运行了几个内核线程？
 
-```
-两个，分别是idle和init。
-```
+两个，分别是 idle 和 init 。
 
-> local_intr_save和local_intr_restore在这里有何作用？
+> local_intr_save 和 local_intr_restore 在这里有何作用？
 
-```
-local\_intr\_save用于关闭interrupt requestlocal\_intr\_restore用于恢复interrupt request。
-```
+可以参考 ./kern/sync/sync.h 里的代码，local\_intr\_save 用于关闭 interrupt request ，local\_intr\_restore 用于恢复 interrupt request 。

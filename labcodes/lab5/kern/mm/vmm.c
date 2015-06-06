@@ -16,7 +16,7 @@
   There a linear link list for vma & a redblack link list for vma in mm.
 ---------------
   mm related functions:
-   global functions
+   golbal functions
      struct mm_struct * mm_create(void)
      void mm_destroy(struct mm_struct *mm)
      int do_pgfault(struct mm_struct *mm, uint32_t error_code, uintptr_t addr)
@@ -353,7 +353,7 @@ check_pgfault(void) {
     assert(sum == 0);
 
     page_remove(pgdir, ROUNDDOWN(addr, PGSIZE));
-    free_page(pa2page(pgdir[0]));
+    free_page(pde2page(pgdir[0]));
     pgdir[0] = 0;
 
     mm->pgdir = NULL;
@@ -452,7 +452,7 @@ do_pgfault(struct mm_struct *mm, uint32_t error_code, uintptr_t addr) {
     *
     */
 #if 0
-    /*LAB3 EXERCISE 1: YOUR CODE*/
+    /*LAB3 EXERCISE 1: 2012011319*/
     ptep = ???              //(1) try to find a pte, if pte's PT(Page Table) isn't existed, then create a PT.
     if (*ptep == 0) {
                             //(2) if the phy addr isn't exist, then alloc a page & map the phy addr with logical addr
@@ -493,32 +493,40 @@ do_pgfault(struct mm_struct *mm, uint32_t error_code, uintptr_t addr) {
         }
    }
 #endif
-    ptep = get_pte(mm->pgdir, addr, 1);
-    if(!ptep){
-        cprintf("get_pte in do_pgfault failed!\n");
-        return ret;
+   // find pte
+    ptep = get_pte(mm -> pgdir, addr, 1);
+    if(ptep == NULL) {
+        cprintf("get_pte fails \n");
+        goto failed;
     }
-    if(*ptep == 0){
-        if(!pgdir_alloc_page(mm->pgdir, addr, perm)){
-            cprintf("pgdir_alloc_page in do_pgfault failed!\n");
-            return ret;
+    assert(ptep != NULL);
+    
+    // physical addr doesn't exist
+    if(* ptep == 0) {
+        /* YOUR CODE */
+        if(pgdir_alloc_page(mm -> pgdir, addr, perm) == NULL) {
+            cprintf("pgdir_alloc_page fails \n");
+            goto failed;
         }
-    }else{
-        if(swap_init_ok){
-            struct Page *page = NULL;
-            ret = swap_in(mm, addr, &page);
-            if(ret){
-                cprintf("swap_in in do_pgfault failed!\n");
-                return ret;
+        /* DONE */
+    } else {
+        if(swap_init_ok) {
+            /* YOUR CODE */
+            struct Page * page = NULL;
+            ret = swap_in(mm, addr, & page);
+            if (ret != 0) {
+                cprintf("swap_in fails \n");
+                goto failed;
             }
-            page_insert(mm->pgdir, page, addr, perm);
+            page_insert(mm -> pgdir, page, addr, perm);
             swap_map_swappable(mm, addr, page, 1);
+            /* DONE */
+        } else {
+            cprintf("no swap_init_ok but ptep is %x, failed\n",*ptep);
+            goto failed;
         }
-	else{
-            cprintf("no swap_init_ok but ptep is %x, failed!\n", *ptep);
-            return ret;
-        }
-    }
+   }
+
    ret = 0;
 failed:
     return ret;
